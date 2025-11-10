@@ -1,4 +1,3 @@
-# python
 import os
 import yaml
 import mlflow
@@ -6,6 +5,9 @@ import pandas as pd
 from catboost import CatBoostRegressor
 from mlflow.models import infer_signature
 from time import perf_counter
+from datetime import datetime
+import json
+
 from src.features.build_features import build_features
 from src.rent_price_pipeline import RentPricePipeline
 from src.utils import Timer
@@ -32,7 +34,6 @@ with Timer("Load training data"):
 
 print("Feature engineering...")
 with Timer("Feature engineering"):
-    # Enrich with engineered features for CatBoost training
     train_df = build_features(train_df, geo_dir="data/geo")
     X_train, y_train = train_df[FEATURES], train_df[TARGET]
 
@@ -46,7 +47,7 @@ with Timer("Training CatBoost"):
         l2_leaf_reg=train_params["l2_leaf_reg"],
         bagging_temperature=train_params["bagging_temperature"],
         cat_features=CATEGORICAL,
-        verbose=False
+        verbose=False,
     )
     model.fit(X_train, y_train)
 
@@ -64,11 +65,10 @@ print("🧠 Preparing wrapper and raw input example...")
 with Timer("Prepare wrapper and raw input example"):
     wrapped = RentPricePipeline(cb_model_path=cbm_path, geo_dir="data/geo")
 
-    # manually load the CatBoost model since we're outside MLflow
+    # manually load the CatBoost model for local inference
     wrapped.model = CatBoostRegressor()
     wrapped.model.load_model(cbm_path)
 
-    # reload raw data for signature example
     raw_df = pd.read_parquet("data/processed/train.parquet")
     input_example = raw_df.sample(1, random_state=42).drop(columns=[TARGET])
 
@@ -80,7 +80,7 @@ with Timer("Infer wrapper signature"):
 print("📝 Logging models to MLflow...")
 with Timer("Log to MLflow"):
     with mlflow.start_run(run_name=f"{model_meta['type']}_v1") as run:
-        # 1. Log base CatBoost model (trained on engineered features)
+        # 1. Log base CatBoost model
         mlflow.catboost.log_model(
             cb_model=model,
             name="catboost_model",
@@ -89,7 +89,7 @@ with Timer("Log to MLflow"):
         )
         base_uri = f"runs:/{run.info.run_id}/catboost_model"
 
-        # 2. Log wrapper pipeline model (for raw-data inference)
+        # 2. Log wrapper pipeline model
         mlflow.pyfunc.log_model(
             name="pipeline_model",
             python_model=wrapped,
@@ -106,13 +106,38 @@ with Timer("Log to MLflow"):
             input_example=input_example,
         )
 
-        # 3️⃣ Add linkage tags for traceability
+        # 3. Add linkage tags
         mlflow.set_tags({
             "type": "rent_price_pipeline",
             "base_model_uri": base_uri,
             "features_version": "v1",
             "input_schema": "raw_property_data",
         })
+
+        # ---------- Save run metadata for DVC and evaluation ----------
+        print("🧩 Saving MLflow run metadata for DVC linkage...")
+        reports_dir = "reports"
+        os.makedirs(reports_dir, exist_ok=True)
+
+        run_info = {
+            "run_id": run.info.run_id,
+            "pipeline_model_uri": f"runs:/{run.info.run_id}/pipeline_model",
+            "catboost_model_uri": f"runs:/{run.info.run_id}/catboost_model",
+            "timestamp": datetime.utcnow().isoformat() + "Z",
+            "mlflow_experiment": mlflow.get_experiment(run.info.experiment_id).name,
+            "mlflow_ui_link": f"http://localhost:5000/#/experiments/{run.info.experiment_id}/runs/{run.info.run_id}",
+        }
+
+        with open(os.path.join(reports_dir, "last_run_info.json"), "w") as f:
+            json.dump(run_info, f, indent=2)
+
+        with open(os.path.join(reports_dir, "last_run_id.txt"), "w") as f:
+            f.write(run.info.run_id)
+
+        print("   📄 Saved run metadata to reports/last_run_info.json")
+        print("   Run ID:", run.info.run_id)
+        print("   MLflow UI:", run_info["mlflow_ui_link"])
+
 
 print("✅ Training and logging complete!")
 print("   Base model URI:", base_uri)
