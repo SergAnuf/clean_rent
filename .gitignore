@@ -1,1 +1,13 @@
 .env_rent
+data/geo/
+data/processed/train.parquet
+data/processed/test.parquet
+catboost_info
+# OS / IDE junk
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.idea/
+.env
+/.env
+/data/raw/

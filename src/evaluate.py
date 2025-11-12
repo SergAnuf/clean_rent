@@ -1,57 +1,103 @@
-# scripts/evaluate.py
 import os
 import json
 import mlflow
 import pandas as pd
+import requests
 from sklearn.metrics import r2_score, mean_absolute_error, mean_absolute_percentage_error
 from src.utils import Timer
 
+# ------------------------------------------------------------------
+# Constants
+# ------------------------------------------------------------------
 TEST_PATH = "data/processed/test.parquet"
 RUN_INFO_PATH = "reports/last_run_info.json"
 METRICS_PATH = "reports/eval_metrics.json"
 
+# Tracking server info (should match training script)
+TRACKING_SERVER_HOST = "127.0.0.1"
+TRACKING_SERVER_PORT = 5000
+
 
 def main():
+    # ---------------------------------------------------------------
+    # 1. Validate prerequisites
+    # ---------------------------------------------------------------
     if not os.path.exists(RUN_INFO_PATH):
-        raise FileNotFoundError(f"{RUN_INFO_PATH} not found. Run training first.")
+        raise FileNotFoundError(f"❌ {RUN_INFO_PATH} not found. Run training first.")
 
     print("📄 Loading last MLflow run info...")
     with open(RUN_INFO_PATH) as f:
         run_info = json.load(f)
 
     run_id = run_info["run_id"]
-    model_uri = run_info["pipeline_model_uri"]  # evaluate the wrapper model
+    model_uri = run_info["pipeline_model_uri"]
     print(f"🔄 Loading model from {model_uri}")
 
-    # ---------- Load MLflow model ----------
+    # ---------------------------------------------------------------
+    # 2. Connect to MLflow tracking server
+    # ---------------------------------------------------------------
+    try:
+        r = requests.get(f"http://{TRACKING_SERVER_HOST}:{TRACKING_SERVER_PORT}", timeout=3)
+        if r.status_code != 200:
+            raise requests.exceptions.RequestException
+    except requests.exceptions.RequestException:
+        raise ConnectionError(
+            f"❌ MLflow tracking server not reachable at "
+            f"http://{TRACKING_SERVER_HOST}:{TRACKING_SERVER_PORT}. "
+            f"Start the server before evaluation."
+        )
+
+    mlflow.set_tracking_uri(f"http://{TRACKING_SERVER_HOST}:{TRACKING_SERVER_PORT}")
+    mlflow.set_registry_uri(f"http://{TRACKING_SERVER_HOST}:{TRACKING_SERVER_PORT}")
+
+    print(f"🔗 Connected to MLflow tracking server: {mlflow.get_tracking_uri()}")
+    print(f"   Using existing run ID: {run_id}")
+    print()
+
+    # ---------------------------------------------------------------
+    # 3. Load model from MLflow
+    # ---------------------------------------------------------------
     with Timer("Load MLflow model"):
         model = mlflow.pyfunc.load_model(model_uri)
 
-    # ---------- Load test data ----------
+    # ---------------------------------------------------------------
+    # 4. Load test data
+    # ---------------------------------------------------------------
     print("📦 Loading test data...")
+    if not os.path.exists(TEST_PATH):
+        raise FileNotFoundError(f"❌ Test data not found: {TEST_PATH}")
     df_test = pd.read_parquet(TEST_PATH)
     X_test = df_test.drop(columns=["price"])
     y_test = df_test["price"]
 
-    # ---------- Run predictions ----------
+    # ---------------------------------------------------------------
+    # 5. Run inference
+    # ---------------------------------------------------------------
     print("⚙️ Running inference on test set...")
     with Timer("Model inference"):
         preds = model.predict(X_test)
 
-    # ---------- Compute metrics ----------
+    # ---------------------------------------------------------------
+    # 6. Compute evaluation metrics
+    # ---------------------------------------------------------------
     print("📊 Computing metrics...")
     metrics = {
         "r2": round(r2_score(y_test, preds), 4),
         "mae": round(mean_absolute_error(y_test, preds), 2),
-        "mape": round(mean_absolute_percentage_error(y_test, preds), 2),
+        "mape": round(mean_absolute_percentage_error(y_test, preds), 4),
     }
 
-    # ---------- Log metrics to MLflow ----------
+    # ---------------------------------------------------------------
+    # 7. Log metrics to MLflow (same run)
+    # ---------------------------------------------------------------
     print("📝 Logging metrics to MLflow...")
-    with mlflow.start_run(run_id=run_id):
-        mlflow.log_metrics(metrics)
+    mlflow.start_run(run_id=run_id)
+    mlflow.log_metrics(metrics)
+    mlflow.end_run()
 
-    # ---------- Save metrics locally ----------
+    # ---------------------------------------------------------------
+    # 8. Save metrics locally for DVC
+    # ---------------------------------------------------------------
     os.makedirs(os.path.dirname(METRICS_PATH), exist_ok=True)
     with open(METRICS_PATH, "w") as f:
         json.dump(metrics, f, indent=2)
@@ -63,3 +109,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

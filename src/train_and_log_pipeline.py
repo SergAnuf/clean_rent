@@ -7,15 +7,52 @@ from mlflow.models import infer_signature
 from time import perf_counter
 from datetime import datetime
 import json
+import requests
+from dotenv import load_dotenv
 
 from src.features.build_features import build_features
 from src.rent_price_pipeline import RentPricePipeline
 from src.utils import Timer
 
-
+# ============================================================
+# 0. Setup: environment, credentials, MLflow connection
+# ============================================================
 overall_start = perf_counter()
+load_dotenv()
 
-# ---------- Load parameters ----------
+GOOGLE_CREDS = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+if not GOOGLE_CREDS or not os.path.isfile(GOOGLE_CREDS):
+    raise FileNotFoundError(f"❌ GOOGLE_APPLICATION_CREDENTIALS invalid: {GOOGLE_CREDS}")
+
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = GOOGLE_CREDS
+
+TRACKING_SERVER_HOST = "127.0.0.1"   # or external IP if remote
+TRACKING_SERVER_PORT = 5000
+EXPERIMENT_NAME = "Rent_Price_Pipeline"
+
+# ---- Verify MLflow server ----
+try:
+    r = requests.get(f"http://{TRACKING_SERVER_HOST}:{TRACKING_SERVER_PORT}", timeout=3)
+    if r.status_code != 200:
+        raise requests.exceptions.RequestException
+except requests.exceptions.RequestException:
+    raise ConnectionError(
+        f"❌ MLflow tracking server not reachable at http://{TRACKING_SERVER_HOST}:{TRACKING_SERVER_PORT}. "
+        f"Please start it before running this script."
+    )
+
+# ---- Configure MLflow ----
+mlflow.set_tracking_uri(f"http://{TRACKING_SERVER_HOST}:{TRACKING_SERVER_PORT}")
+mlflow.set_registry_uri(f"http://{TRACKING_SERVER_HOST}:{TRACKING_SERVER_PORT}")
+mlflow.set_experiment(EXPERIMENT_NAME)
+
+print(f"🔗 Connected to MLflow tracking server: {mlflow.get_tracking_uri()}")
+print(f"Experiment: {EXPERIMENT_NAME}")
+print()
+
+# ============================================================
+# 1. Load parameters and prepare data
+# ============================================================
 with Timer("Load parameters"):
     with open("params.yaml") as f:
         params = yaml.safe_load(f)
@@ -26,18 +63,21 @@ TARGET = model_meta["target"]
 NUMERIC = model_meta["numerical_features"]
 CATEGORICAL = model_meta["categorical_features"]
 FEATURES = NUMERIC + CATEGORICAL
+NOT_USED_COLUMNS = model_meta["not_used_features"]
 
-# ---------- Prepare training data ----------
 print("📦 Loading training data...")
 with Timer("Load training data"):
     train_df = pd.read_parquet("data/processed/train.parquet")
+    train_df = train_df.drop(columns=NOT_USED_COLUMNS)
 
-print("Feature engineering...")
+print("🧩 Feature engineering...")
 with Timer("Feature engineering"):
     train_df = build_features(train_df, geo_dir="data/geo")
     X_train, y_train = train_df[FEATURES], train_df[TARGET]
 
-# ---------- Train CatBoost ----------
+# ============================================================
+# 2. Train CatBoost model
+# ============================================================
 print("🚀 Training CatBoost model...")
 with Timer("Training CatBoost"):
     model = CatBoostRegressor(
@@ -51,7 +91,9 @@ with Timer("Training CatBoost"):
     )
     model.fit(X_train, y_train)
 
-# ---------- Save base model ----------
+# ============================================================
+# 3. Save model and prepare signatures
+# ============================================================
 with Timer("Save base model"):
     os.makedirs("models", exist_ok=True)
     cbm_path = "models/catboost_model_v1.cbm"
@@ -60,27 +102,27 @@ with Timer("Save base model"):
 with Timer("Infer signature for CatBoost"):
     signature_catboost = infer_signature(X_train, model.predict(X_train[:5]))
 
-# ---------- Prepare wrapper + raw input example ----------
-print("🧠 Preparing wrapper and raw input example...")
+print("🧠 Preparing wrapper pipeline...")
 with Timer("Prepare wrapper and raw input example"):
     wrapped = RentPricePipeline(cb_model_path=cbm_path, geo_dir="data/geo")
-
-    # manually load the CatBoost model for local inference
     wrapped.model = CatBoostRegressor()
     wrapped.model.load_model(cbm_path)
 
     raw_df = pd.read_parquet("data/processed/train.parquet")
+    raw_df = raw_df.drop(columns=NOT_USED_COLUMNS)
     input_example = raw_df.sample(1, random_state=42).drop(columns=[TARGET])
 
 with Timer("Infer wrapper signature"):
     pred_example = wrapped.predict(None, input_example)
     signature_pipeline = infer_signature(input_example, pred_example)
 
-# ---------- Log to MLflow ----------
+# ============================================================
+# 4. Log everything to MLflow
+# ============================================================
 print("📝 Logging models to MLflow...")
 with Timer("Log to MLflow"):
     with mlflow.start_run(run_name=f"{model_meta['type']}_v1") as run:
-        # 1. Log base CatBoost model
+        # ---- Log CatBoost base model ----
         mlflow.catboost.log_model(
             cb_model=model,
             name="catboost_model",
@@ -89,7 +131,7 @@ with Timer("Log to MLflow"):
         )
         base_uri = f"runs:/{run.info.run_id}/catboost_model"
 
-        # 2. Log wrapper pipeline model
+        # ---- Log wrapper pipeline ----
         mlflow.pyfunc.log_model(
             name="pipeline_model",
             python_model=wrapped,
@@ -106,7 +148,7 @@ with Timer("Log to MLflow"):
             input_example=input_example,
         )
 
-        # 3. Add linkage tags
+        # ---- Tags for traceability ----
         mlflow.set_tags({
             "type": "rent_price_pipeline",
             "base_model_uri": base_uri,
@@ -114,7 +156,7 @@ with Timer("Log to MLflow"):
             "input_schema": "raw_property_data",
         })
 
-        # ---------- Save run metadata for DVC and evaluation ----------
+        # ---- Save run metadata for DVC ----
         print("🧩 Saving MLflow run metadata for DVC linkage...")
         reports_dir = "reports"
         os.makedirs(reports_dir, exist_ok=True)
@@ -125,7 +167,7 @@ with Timer("Log to MLflow"):
             "catboost_model_uri": f"runs:/{run.info.run_id}/catboost_model",
             "timestamp": datetime.utcnow().isoformat() + "Z",
             "mlflow_experiment": mlflow.get_experiment(run.info.experiment_id).name,
-            "mlflow_ui_link": f"http://localhost:5000/#/experiments/{run.info.experiment_id}/runs/{run.info.run_id}",
+            "mlflow_ui_link": f"http://{TRACKING_SERVER_HOST}:{TRACKING_SERVER_PORT}/#/experiments/{run.info.experiment_id}/runs/{run.info.run_id}",
         }
 
         with open(os.path.join(reports_dir, "last_run_info.json"), "w") as f:
@@ -138,10 +180,10 @@ with Timer("Log to MLflow"):
         print("   Run ID:", run.info.run_id)
         print("   MLflow UI:", run_info["mlflow_ui_link"])
 
-
-print("✅ Training and logging complete!")
+# ============================================================
+# 5. Completion
+# ============================================================
+print("✅ Training and remote logging complete!")
 print("   Base model URI:", base_uri)
-print("   Wrapper pipeline logged at: pipeline_model/")
-
-total_elapsed = perf_counter() - overall_start
-print(f"🏁 Total script time: {total_elapsed:.2f}s")
+print("   Wrapper pipeline logged as: pipeline_model/")
+print(f"🏁 Total script time: {perf_counter() - overall_start:.2f}s")

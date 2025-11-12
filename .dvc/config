@@ -1,0 +1,5 @@
+[core]
+    remote = gcsremote
+['remote "gcsremote"']
+    url = gs://rent_price_bucket/dvc
+    credentialpath = /tmp/creds.json
