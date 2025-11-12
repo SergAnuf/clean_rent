@@ -2,4 +2,4 @@
     remote = gcsremote
 ['remote "gcsremote"']
     url = gs://rent_price_bucket/dvc
-    credentialpath = /tmp/creds.json
+    credentialpath = /home/zcemg08/.config/gcloud/application_default_credentials.json
