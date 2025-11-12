@@ -1,0 +1,6 @@
+outs:
+- md5: 80e2fb6b90759d4944a5f839fd70257f.dir
+  size: 4549431
+  nfiles: 5
+  hash: md5
+  path: geo
