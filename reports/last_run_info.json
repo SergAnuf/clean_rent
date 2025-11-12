@@ -1,8 +1,0 @@
-{
-  "run_id": "29fcfa8ff9b54c3090f29c41d939139f",
-  "pipeline_model_uri": "runs:/29fcfa8ff9b54c3090f29c41d939139f/pipeline_model",
-  "catboost_model_uri": "runs:/29fcfa8ff9b54c3090f29c41d939139f/catboost_model",
-  "timestamp": "2025-11-11T13:28:58.151805Z",
-  "mlflow_experiment": "Rent_Price_Pipeline",
-  "mlflow_ui_link": "http://127.0.0.1:5000/#/experiments/8/runs/29fcfa8ff9b54c3090f29c41d939139f"
-}

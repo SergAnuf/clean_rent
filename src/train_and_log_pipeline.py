@@ -1,4 +1,4 @@
-import os
+import os, sys
 import yaml
 import mlflow
 import pandas as pd
@@ -13,6 +13,9 @@ from dotenv import load_dotenv
 from src.features.build_features import build_features
 from src.rent_price_pipeline import RentPricePipeline
 from src.utils import Timer
+
+# Add project root to sys.path for imports
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 # ============================================================
 # 0. Setup: environment, credentials, MLflow connection
