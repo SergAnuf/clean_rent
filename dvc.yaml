@@ -14,9 +14,9 @@ stages:
           cache: false
 
   evaluate:
-    cmd: python scripts/evaluate.py
+    cmd: python src/evaluate.py
     deps:
-      - scripts/evaluate.py
+      - src/evaluate.py
       - reports/last_run_info.json
       - data/processed/test.parquet
     metrics:
