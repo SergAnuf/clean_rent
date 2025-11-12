@@ -1,0 +1,24 @@
+stages:
+  train:
+    cmd: python src/train_and_log_pipeline.py
+    deps:
+      - src/train_and_log_pipeline.py
+      - src/rent_price_pipeline.py
+      - src/features/build_features.py
+      - data/processed/train.parquet
+      - params.yaml
+    outs:
+      - models/
+    metrics:
+      - reports/last_run_info.json:
+          cache: false
+
+  evaluate:
+    cmd: python scripts/evaluate.py
+    deps:
+      - scripts/evaluate.py
+      - reports/last_run_info.json
+      - data/processed/test.parquet
+    metrics:
+      - reports/eval_metrics.json:
+          cache: false

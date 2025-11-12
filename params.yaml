@@ -1,0 +1,57 @@
+train:
+  iterations: 1479
+  depth: 8
+  learning_rate: 0.15234576688927093
+  l2_leaf_reg: 2.012224642652163
+  bagging_temperature: 0.7180166157416417
+
+model:
+  type: CatBoostRegressor
+  target: price
+  numerical_features:
+    - latitude
+    - longitude
+    - distance_to_center
+    - angle_from_center
+    - distance_to_station1
+    - distance_to_station2
+    - distance_to_station3
+  categorical_features:
+    - bedrooms
+    - bathrooms
+    - deposit
+    - zone
+    - borough
+    - propertyType
+    - furnishType
+    - NoiseClass
+    - letType
+    - TFL1
+    - TFL2
+    - TFL3
+    - RAIL1
+    - RAIL2
+    - RAIL3
+  not_used_features:
+    - id
+    - title
+    - displayAddress
+    - outcode
+    - incode
+    - secondaryPrice
+    - letAvailableDate
+    - councilTaxExempt
+    - councilTaxIncluded
+    - councilTaxBand
+    - description
+    - features
+    - listingUpdateReason
+    - listingUpdateDate
+    - firstVisibleDate
+    - addedOn
+    - color
+    - index_right
+    - clean_description
+    - index_rows
+    - sizeSqFeetMin
+    - sizeSqFeetMax
