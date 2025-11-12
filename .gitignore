@@ -13,3 +13,4 @@ __pycache__/
 /data/raw/
 /models/catboost_model_v1.cbm
 models/
+/models

@@ -1,0 +1,55 @@
+schema: '2.0'
+stages:
+  train:
+    cmd: python src/train_and_log_pipeline.py
+    deps:
+    - path: data/processed/train.parquet
+      hash: md5
+      md5: 783b6c2c16da5a94d8374493d7f42ec2
+      size: 29399108
+    - path: params.yaml
+      hash: md5
+      md5: ac47f7a82b76194026b6c206d72a5427
+      size: 1046
+    - path: src/features/build_features.py
+      hash: md5
+      md5: 4791b158288d7807b302261e15bc6300
+      size: 962
+    - path: src/rent_price_pipeline.py
+      hash: md5
+      md5: e7bca59da109960350f87c3fb007efc8
+      size: 1749
+    - path: src/train_and_log_pipeline.py
+      hash: md5
+      md5: ed4b431a15d7c7d6e5427ec4d5b63659
+      size: 7435
+    outs:
+    - path: models/
+      hash: md5
+      md5: f0804afae273ac7562622159cdbc802a.dir
+      size: 8780420
+      nfiles: 1
+    - path: reports/last_run_info.json
+      hash: md5
+      md5: 0109a05ced7f13e73add780100f992d6
+      size: 403
+  evaluate:
+    cmd: python src/evaluate.py
+    deps:
+    - path: data/processed/test.parquet
+      hash: md5
+      md5: 870a3400fb5553843c5488a0eb66b33a
+      size: 7272544
+    - path: reports/last_run_info.json
+      hash: md5
+      md5: 0109a05ced7f13e73add780100f992d6
+      size: 403
+    - path: src/evaluate.py
+      hash: md5
+      md5: 2250aaf3a92c2f6571cc709b6ef00ce2
+      size: 4467
+    outs:
+    - path: reports/eval_metrics.json
+      hash: md5
+      md5: 47da233f7b22f693ed7668f5741ad9c9
+      size: 53
