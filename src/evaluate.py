@@ -41,6 +41,16 @@ def main():
     print()
 
     # ---------------------------------------------------------------
+    # Ensure Google Cloud credentials are set
+    # ---------------------------------------------------------------
+    GOOGLE_CREDS = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+    if not GOOGLE_CREDS or not os.path.isfile(GOOGLE_CREDS):
+        raise FileNotFoundError(
+            f"❌ GOOGLE_APPLICATION_CREDENTIALS not set or invalid: {GOOGLE_CREDS}"
+        )
+    print(f"🔐 Using Google credentials: {GOOGLE_CREDS}")
+
+    # ---------------------------------------------------------------
     # 2. Connect to MLflow tracking server
     # ---------------------------------------------------------------
     try:

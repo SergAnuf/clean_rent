@@ -168,23 +168,26 @@ with Timer("Log to MLflow"):
         # ============================================================
         # Construct GCS artifact paths (Solution B)
         # ============================================================
-        ARTIFACT_ROOT = "gs://rent_price_bucket/artifacts"
-        run_id = run.info.run_id
+        # ---- Save run metadata for DVC ----
+        print("🧩 Saving MLflow run metadata for DVC linkage...")
+        reports_dir = "reports"
+        os.makedirs(reports_dir, exist_ok=True)
 
-        pipeline_model_uri = f"{ARTIFACT_ROOT}/{run_id}/artifacts/pipeline_model"
-        catboost_model_uri = f"{ARTIFACT_ROOT}/{run_id}/artifacts/catboost_model"
+        # ============================================================
+        # Capture the actual artifact URI from MLflow (correct path)
+        # ============================================================
+        model_final_uri = mlflow.get_artifact_uri("pipeline_model")
+        run_id = run.info.run_id
 
         # ============================================================
         # Save metadata to JSON
         # ============================================================
         run_info = {
             "run_id": run_id,
-            "pipeline_model_uri": pipeline_model_uri,
-            "catboost_model_uri": catboost_model_uri,
-            "artifact_root": ARTIFACT_ROOT,
+            "pipeline_model_uri": model_final_uri,
             "timestamp": datetime.utcnow().isoformat() + "Z",
             "mlflow_experiment": mlflow.get_experiment(run.info.experiment_id).name,
-            "mlflow_ui_link": f"http://{TRACKING_SERVER_HOST}:{TRACKING_SERVER_PORT}/#/experiments/{run.info.experiment_id}/runs/{run_id}",
+            "mlflow_ui_link": f"http://{TRACKING_SERVER_HOST}:{TRACKING_SERVER_PORT}/#/experiments/{run.info.experiment_id}/runs/{run_id}"
         }
 
         with open(os.path.join(reports_dir, "last_run_info.json"), "w") as f:
