@@ -168,7 +168,7 @@ with Timer("Log to MLflow"):
         # ============================================================
         # Construct GCS artifact paths (Solution B)
         # ============================================================
-        ARTIFACT_ROOT = "gs://rent_price_bucket/mlflow"
+        ARTIFACT_ROOT = "gs://rent_price_bucket/artifacts"
         run_id = run.info.run_id
 
         pipeline_model_uri = f"{ARTIFACT_ROOT}/{run_id}/artifacts/pipeline_model"
