@@ -24,7 +24,7 @@ TRACKING_SERVER_PORT = 5000
 
 def main():
     # ---------------------------------------------------------------
-    # 1. Validate prerequisites
+    # 1. Load metadata
     # ---------------------------------------------------------------
     if not os.path.exists(RUN_INFO_PATH):
         raise FileNotFoundError(f"❌ {RUN_INFO_PATH} not found. Run training first.")
@@ -35,7 +35,10 @@ def main():
 
     run_id = run_info["run_id"]
     model_uri = run_info["pipeline_model_uri"]
-    print(f"🔄 Loading model from {model_uri}")
+
+    print(f"🔍 Run ID: {run_id}")
+    print(f"🔄 Model URI: {model_uri}")
+    print()
 
     # ---------------------------------------------------------------
     # 2. Connect to MLflow tracking server
@@ -54,12 +57,12 @@ def main():
     mlflow.set_tracking_uri(f"http://{TRACKING_SERVER_HOST}:{TRACKING_SERVER_PORT}")
     mlflow.set_registry_uri(f"http://{TRACKING_SERVER_HOST}:{TRACKING_SERVER_PORT}")
 
-    print(f"🔗 Connected to MLflow tracking server: {mlflow.get_tracking_uri()}")
-    print(f"   Using existing run ID: {run_id}")
+    print(f"🔗 Connected to MLflow: {mlflow.get_tracking_uri()}")
+    print(f"   Using run ID: {run_id}")
     print()
 
     # ---------------------------------------------------------------
-    # 3. Load model from MLflow
+    # 3. Load model from GCS
     # ---------------------------------------------------------------
     with Timer("Load MLflow model"):
         model = mlflow.pyfunc.load_model(model_uri)
@@ -68,8 +71,6 @@ def main():
     # 4. Load test data
     # ---------------------------------------------------------------
     print("📦 Loading test data...")
-    if not os.path.exists(TEST_PATH):
-        raise FileNotFoundError(f"❌ Test data not found: {TEST_PATH}")
     df_test = pd.read_parquet(TEST_PATH)
     X_test = df_test.drop(columns=["price"])
     y_test = df_test["price"]
@@ -82,7 +83,7 @@ def main():
         preds = model.predict(X_test)
 
     # ---------------------------------------------------------------
-    # 6. Compute evaluation metrics
+    # 6. Compute metrics
     # ---------------------------------------------------------------
     print("📊 Computing metrics...")
     metrics = {
