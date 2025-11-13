@@ -17,13 +17,8 @@ jobs:
         run: |
           mkdir -p deploy/src/app/reports
 
-          # copy Dockerfile
           cp Dockerfile deploy/
-
-          # copy app code
-          cp -r src/app/*.py deploy/src/app/
-
-          # copy reports from root-level folder
+          cp -r src/app/*.py deploy/src/app/ || true
           cp -r reports/* deploy/src/app/reports/ || true
 
       - name: Push to Hugging Face Space
@@ -36,8 +31,10 @@ jobs:
           git config user.email "actions@github.com"
           git config user.name "GitHub Actions"
 
-          git remote add space https://huggingface.co/spaces/servisgas/pricing
-
           git add .
           git commit -m "Deploy selected files"
-          git push --force https://zcemg08:$HF_TOKEN@huggingface.co/spaces/servisgas/pricing HEAD:main
+
+          # DIRECT AUTHENTICATED PUSH (no remote add)
+          git push --force \
+            https://zcemg08:${HF_TOKEN}@huggingface.co/spaces/servisgas/pricing \
+            HEAD:main
