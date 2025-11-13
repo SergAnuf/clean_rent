@@ -23,6 +23,7 @@ jobs:
 
           # copy app python files from src/app/
           cp src/app/*.py deploy/ || true
+          cp src/app/README.md deploy/README.md
 
           # copy root-level reports folder
           cp -r reports/* deploy/reports/ || true
