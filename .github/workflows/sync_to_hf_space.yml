@@ -1,0 +1,50 @@
+name: Sync Selected Files to Hugging Face Space
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  sync-to-hf:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Prepare deploy folder
+        run: |
+          mkdir deploy
+
+          # copy Dockerfile
+          cp Dockerfile deploy/
+
+          # copy app package
+          mkdir -p deploy/src/app
+          cp -r src/app/*.py deploy/src/app/
+
+          # copy reports
+          mkdir -p deploy/src/app/reports
+          cp -r src/app/reports/* deploy/src/app/reports/
+
+          # copy requirements if you want it at root
+          # (optional if you rely on src/app/requirements.txt)
+          # cp src/app/requirements.txt deploy/
+
+      - name: Push to Hugging Face Space
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          cd deploy
+
+          git init
+          git config user.email "actions@github.com"
+          git config user.name "GitHub Actions"
+
+          # IMPORTANT: change space name if needed (pricing/chatbot)
+          git remote add space https://huggingface.co/spaces/servisgas/pricing
+
+          git add .
+          git commit -m "Deploy selected files"
+          git push --force https://zcemg08:$HF_TOKEN@huggingface.co/spaces/servisgas/pricing HEAD:main
