@@ -165,23 +165,36 @@ with Timer("Log to MLflow"):
         reports_dir = "reports"
         os.makedirs(reports_dir, exist_ok=True)
 
+        # ============================================================
+        # Construct GCS artifact paths (Solution B)
+        # ============================================================
+        ARTIFACT_ROOT = "gs://rent_price_bucket/mlflow"
+        run_id = run.info.run_id
+
+        pipeline_model_uri = f"{ARTIFACT_ROOT}/{run_id}/artifacts/pipeline_model"
+        catboost_model_uri = f"{ARTIFACT_ROOT}/{run_id}/artifacts/catboost_model"
+
+        # ============================================================
+        # Save metadata to JSON
+        # ============================================================
         run_info = {
-            "run_id": run.info.run_id,
-            "pipeline_model_uri": f"runs:/{run.info.run_id}/pipeline_model",
-            "catboost_model_uri": f"runs:/{run.info.run_id}/catboost_model",
+            "run_id": run_id,
+            "pipeline_model_uri": pipeline_model_uri,
+            "catboost_model_uri": catboost_model_uri,
+            "artifact_root": ARTIFACT_ROOT,
             "timestamp": datetime.utcnow().isoformat() + "Z",
             "mlflow_experiment": mlflow.get_experiment(run.info.experiment_id).name,
-            "mlflow_ui_link": f"http://{TRACKING_SERVER_HOST}:{TRACKING_SERVER_PORT}/#/experiments/{run.info.experiment_id}/runs/{run.info.run_id}",
+            "mlflow_ui_link": f"http://{TRACKING_SERVER_HOST}:{TRACKING_SERVER_PORT}/#/experiments/{run.info.experiment_id}/runs/{run_id}",
         }
 
         with open(os.path.join(reports_dir, "last_run_info.json"), "w") as f:
             json.dump(run_info, f, indent=2)
 
         with open(os.path.join(reports_dir, "last_run_id.txt"), "w") as f:
-            f.write(run.info.run_id)
+            f.write(run_id)
 
         print("   📄 Saved run metadata to reports/last_run_info.json")
-        print("   Run ID:", run.info.run_id)
+        print("   Run ID:", run_id)
         print("   MLflow UI:", run_info["mlflow_ui_link"])
 
 # ============================================================
