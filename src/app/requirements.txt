@@ -1,13 +1,12 @@
 mlflow==3.6.0
-aiohttp==3.9.1
 catboost==1.2.3
-cloudpickle==3.1.2
-geopandas==1.0.1
-geopy==2.4.1
-ipywidgets==8.1.6
 numpy==1.26.4
 pandas==2.3.3
-psutil==5.9.6
 pyarrow==15.0.2
-scikit-learn==1.7.2
-scipy==1.15.3
+aiohttp==3.9.1
+psutil==5.9.6
+geopandas==1.0.1
+geopy==2.4.1
+scikit-learn==1.7.2   # if needed in your PythonModel
+scipy==1.15.3         # optional; keep only if used
+cloudpickle==3.1.2    # optional; MLflow includes this normally
