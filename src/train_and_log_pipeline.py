@@ -200,7 +200,7 @@ with Timer("Log to MLflow"):
 # ============================================================
 # 5. Completion
 # ============================================================
-print("✅ Training and remote logging complete!")
+print("✅ Training and remote logging completed!")
 print("   Base model URI:", base_uri)
 print("   Wrapper pipeline logged as: pipeline_model/")
 print(f"🏁 Total script time: {perf_counter() - overall_start:.2f}s")
