@@ -21,18 +21,18 @@ stages:
       size: 1749
     - path: src/train_and_log_pipeline.py
       hash: md5
-      md5: ed4b431a15d7c7d6e5427ec4d5b63659
-      size: 7435
+      md5: 0b3f9c0b09345060a12ffc4048585be9
+      size: 8024
     outs:
     - path: models/
       hash: md5
-      md5: f0804afae273ac7562622159cdbc802a.dir
+      md5: 3e3b76b68743b46c2133c0a096b99820.dir
       size: 8780420
       nfiles: 1
     - path: reports/last_run_info.json
       hash: md5
-      md5: 0109a05ced7f13e73add780100f992d6
-      size: 403
+      md5: 7bee064445a576d60acd3c00a019da7e
+      size: 532
   evaluate:
     cmd: python src/evaluate.py
     deps:

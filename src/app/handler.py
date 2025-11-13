@@ -1,14 +1,14 @@
-import os,sys
+import os, sys
 import json
+import mlflow
 import mlflow.pyfunc
 import pandas as pd
 
 
-# ensure the project root (which contains 'src') is in sys.path
+# Ensure the project root (which contains 'src') is in sys.path
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
-
 
 
 class FastApiHandler:
@@ -17,15 +17,33 @@ class FastApiHandler:
     def __init__(
         self,
         run_info_path: str = "reports/last_run_info.json",
-        tracking_uri: str = "http://127.0.0.1:5000",
     ):
         self.run_info_path = run_info_path
-        self.tracking_uri = tracking_uri
         self.model = None
         self.run_id = None
         self.model_uri = None
 
+        self._configure_gcp_credentials()
         self.load_model()  # Load once at startup
+
+    # -----------------------------------------------------------
+    # Configure Google Cloud authentication
+    # -----------------------------------------------------------
+    def _configure_gcp_credentials(self):
+        """Loads GCP credentials from HF ENV or system ENV."""
+        creds_json = os.getenv("GOOGLE_APPLICATION_CREDENTIALS_JSON")
+
+        if creds_json:
+            # HF Spaces: write creds to temp file
+            print("🔐 Configuring GCP credentials from ENV JSON...")
+            with open("/tmp/gcp_creds.json", "w") as f:
+                f.write(creds_json)
+            os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/tmp/gcp_creds.json"
+
+        elif os.getenv("GOOGLE_APPLICATION_CREDENTIALS"):
+            print("🔐 Using existing GOOGLE_APPLICATION_CREDENTIALS")
+        else:
+            print("⚠️ WARNING: No GCP credentials provided! GCS loading may fail.")
 
     # -----------------------------------------------------------
     # Load the MLflow model
@@ -42,11 +60,11 @@ class FastApiHandler:
         self.run_id = info.get("run_id")
         self.model_uri = info.get("pipeline_model_uri")
 
-        mlflow.set_tracking_uri(self.tracking_uri)
-        mlflow.set_registry_uri(self.tracking_uri)
+        print(f"🔗 Loading MLflow model from GCS: {self.model_uri}")
 
-        print(f"🔗 Loading MLflow model from {self.model_uri} ...")
+        # ❗ DO NOT SET TRACKING URI — not needed for inference
         self.model = mlflow.pyfunc.load_model(self.model_uri)
+
         print(f"✅ Model loaded successfully (run_id={self.run_id})")
 
     # -----------------------------------------------------------

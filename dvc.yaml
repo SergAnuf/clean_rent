@@ -8,10 +8,7 @@ stages:
       - data/processed/train.parquet
       - params.yaml
     outs:
-      - models/
-    metrics:
-      - reports/last_run_info.json:
-          cache: false
+      - reports/last_run_info.json
 
   evaluate:
     cmd: python src/evaluate.py
