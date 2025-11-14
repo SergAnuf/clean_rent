@@ -1,5 +1,6 @@
 mlflow==3.6.0
 catboost==1.2.3
+google-cloud-storage==2.13.0  # Required for GCS access
 numpy==1.26.4
 pandas==2.3.3
 pyarrow==15.0.2
@@ -7,6 +8,9 @@ aiohttp==3.9.1
 psutil==5.9.6
 geopandas==1.0.1
 geopy==2.4.1
-scikit-learn==1.7.2   # if needed in your PythonModel
-scipy==1.15.3         # optional; keep only if used
-cloudpickle==3.1.2    # optional; MLflow includes this normally
+scikit-learn==1.7.2
+scipy==1.15.3
+cloudpickle==3.1.2
+fastapi==0.104.0
+uvicorn==0.24.0
+pydantic==2.5.0

@@ -6,7 +6,7 @@ load_dotenv()
 #
 # MODEL_URI =  "models:/m-ad1204534bf147658f6b176edc00e51c"
 
-MODEL_URI = "gs://rent_price_bucket/artifacts/8/models/m-ad1204534bf147658f6b176edc00e51c/artifacts"
+MODEL_URI = "gs://rent_price_bucket/artifacts/8/models/m-7b1df93575ea433a82a0c000c42c606e/artifacts"
 
 print("🔗 Loading MLflow model from:")
 print(MODEL_URI)
