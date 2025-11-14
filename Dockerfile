@@ -36,6 +36,12 @@ COPY ./reports /app/reports
 COPY ./requirements.txt /app/requirements.txt
 
 # ------------------------------------------------
+# NEW — Copy source code for MLflow unpickling
+# ------------------------------------------------
+COPY ./src /app/src
+ENV PYTHONPATH="/app"
+
+# ------------------------------------------------
 # Install Python deps
 # ------------------------------------------------
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel
@@ -66,7 +72,6 @@ RUN printf '%s\n' \
   '' \
   '# -------------------------------' \
   '# Force GCP credential load BEFORE MLflow loads model' \
-  '# -------------------------------' \
   'echo "🔐 Verifying GCP credentials..."' \
   'python <<EOF' \
   'import os' \

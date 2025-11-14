@@ -25,6 +25,9 @@ jobs:
           cp src/app/*.py deploy/ || true
           cp src/app/README.md deploy/README.md
           cp src/app/requirements.txt deploy/requirements.txt
+          
+          # Copy full src directory for MLflow unpickling
+          cp -r src/* deploy/src/
 
           # copy root-level reports folder
           cp -r reports/* deploy/reports/ || true
