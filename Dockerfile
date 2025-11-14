@@ -1,15 +1,12 @@
 # =============================================================
-#  TrueNest - MLflow + FastAPI Inference Image (GeoPandas-ready)
+# TrueNest - MLflow + FastAPI Inference Image (GeoPandas-ready)
 # =============================================================
 
 FROM python:3.10
 
-# Avoid interactive prompts during apt installs
 ARG DEBIAN_FRONTEND=noninteractive
 
-# ------------------------------------------------
-# Install system dependencies for geopandas, shapely, fiona, gdal, pyproj
-# ------------------------------------------------
+# Install system deps for GeoPandas stack
 RUN apt-get update && apt-get install -y \
     gdal-bin \
     libgdal-dev \
@@ -22,43 +19,30 @@ RUN apt-get update && apt-get install -y \
     wget \
     && rm -rf /var/lib/apt/lists/*
 
-# ------------------------------------------------
-# Environment for GDAL, PROJ
-# ------------------------------------------------
 ENV GDAL_DATA=/usr/share/gdal
 ENV PROJ_LIB=/usr/share/proj
-
-# ------------------------------------------------
-# Prevent buffering and enforce UTF-8
-# ------------------------------------------------
-ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    LANG=C.UTF-8
+ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 LANG=C.UTF-8
 
 WORKDIR /app
 
-# ------------------------------------------------
-# Copy your inference code and model metadata
-# ------------------------------------------------
+# Copy files
 COPY ./main.py /app/main.py
 COPY ./handler.py /app/handler.py
 COPY ./reports /app/reports
 COPY ./requirements.txt /app/requirements.txt
 
-# ------------------------------------------------
-# Install Python dependencies (GeoPandas supported)
-# ------------------------------------------------
+# Install runtime deps
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel
+
+# Install FastAPI + Uvicorn (missing from MLflow requirements)
+RUN pip install --no-cache-dir uvicorn fastapi python-dotenv
+
+# Install MLflow model deps
 RUN pip install --no-cache-dir -r /app/requirements.txt
 
-# ------------------------------------------------
-# Hugging Face requires port 7860
-# ------------------------------------------------
 EXPOSE 7860
 
-# ------------------------------------------------
-# Create startup script
-# ------------------------------------------------
+# Startup script
 RUN printf '%s\n' \
   '#!/bin/bash' \
   'set -e' \
@@ -72,7 +56,9 @@ RUN printf '%s\n' \
   '  echo "⚠️ No GOOGLE_APPLICATION_CREDENTIALS_JSON provided. GCS access may fail."' \
   'fi' \
   '' \
-  '# Preload MLflow model' \
+  'export GDAL_DATA=/usr/share/gdal' \
+  'export PROJ_LIB=/usr/share/proj' \
+  '' \
   'python <<EOF' \
   'import mlflow, json' \
   'info = json.load(open("/app/reports/last_run_info.json"))' \

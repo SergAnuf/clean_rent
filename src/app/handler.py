@@ -3,7 +3,10 @@ import json
 import mlflow
 import mlflow.pyfunc
 import pandas as pd
+from dotenv import load_dotenv
 
+# Load .env BEFORE anything else
+load_dotenv()
 
 # Ensure the project root (which contains 'src') is in sys.path
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
@@ -31,19 +34,22 @@ class FastApiHandler:
     # -----------------------------------------------------------
     def _configure_gcp_credentials(self):
         """Loads GCP credentials from HF ENV or system ENV."""
+
+        # Hugging Face Spaces: JSON secret
         creds_json = os.getenv("GOOGLE_APPLICATION_CREDENTIALS_JSON")
 
         if creds_json:
-            # HF Spaces: write creds to temp file
             print("🔐 Configuring GCP credentials from ENV JSON...")
             with open("/tmp/gcp_creds.json", "w") as f:
                 f.write(creds_json)
             os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/tmp/gcp_creds.json"
 
+        # Local dev or Docker with .env
         elif os.getenv("GOOGLE_APPLICATION_CREDENTIALS"):
-            print("🔐 Using existing GOOGLE_APPLICATION_CREDENTIALS")
+            print("🔐 Using GOOGLE_APPLICATION_CREDENTIALS from environment")
+
         else:
-            print("⚠️ WARNING: No GCP credentials provided! GCS loading may fail.")
+            print("⚠️ WARNING: No GCP credentials provided! GCS model loading may fail.")
 
     # -----------------------------------------------------------
     # Load the MLflow model
@@ -60,9 +66,9 @@ class FastApiHandler:
         self.run_id = info.get("run_id")
         self.model_uri = info.get("pipeline_model_uri")
 
-        print(f"🔗 Loading MLflow model from GCS: {self.model_uri}")
+        print(f"🔗 Loading MLflow model: {self.model_uri}")
 
-        # ❗ DO NOT SET TRACKING URI — not needed for inference
+        # MLflow resolves GCS path automatically from runs:/ URI
         self.model = mlflow.pyfunc.load_model(self.model_uri)
 
         print(f"✅ Model loaded successfully (run_id={self.run_id})")
@@ -71,7 +77,6 @@ class FastApiHandler:
     # Predict
     # -----------------------------------------------------------
     def predict(self, model_params: dict) -> float:
-        """Run a single prediction using the loaded MLflow model."""
         if self.model is None:
             raise RuntimeError("Model not loaded")
 
@@ -83,7 +88,6 @@ class FastApiHandler:
     # FastAPI-compatible handler
     # -----------------------------------------------------------
     def handle(self, params: dict) -> dict:
-        """Main request handler for FastAPI."""
         if "model_params" not in params:
             return {"error": "Missing 'model_params' in request"}
 
