@@ -17,6 +17,7 @@ jobs:
         run: |
           # deploy folder
           mkdir -p deploy/reports
+          mkdir -p deploy/src
 
           # copy Dockerfile
           cp Dockerfile deploy/
