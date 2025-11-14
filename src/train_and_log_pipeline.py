@@ -136,7 +136,7 @@ with Timer("Log to MLflow"):
         base_uri = f"runs:/{run.info.run_id}/catboost_model"
 
         # ---- Log wrapper pipeline ----
-        mlflow.pyfunc.log_model(
+        logged = mlflow.pyfunc.log_model(
             name="pipeline_model",
             python_model=wrapped,
             code_paths=[
@@ -171,7 +171,7 @@ with Timer("Log to MLflow"):
         run_id = run.info.run_id
 
         # MLflow-native model URI (recommended for all environments)
-        pipeline_model_uri = mlflow.get_artifact_uri("pipeline_model")
+        pipeline_model_uri = logged.model_uri
 
         # ============================================================
         # Save metadata to JSON — clean and portable
