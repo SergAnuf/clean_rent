@@ -16,8 +16,8 @@ from src.utils import Timer
 # Constants
 # ------------------------------------------------------------------
 TEST_PATH = "data/processed/test.parquet"
-RUN_INFO_PATH = "app/reports/last_run_info.json"
-METRICS_PATH = "app/reports/eval_metrics.json"
+RUN_INFO_PATH = "reports/last_run_info.json"
+METRICS_PATH = "reports/eval_metrics.json"
 
 # Tracking server info (should match training script)
 TRACKING_SERVER_HOST = "127.0.0.1"

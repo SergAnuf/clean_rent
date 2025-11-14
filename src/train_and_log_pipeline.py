@@ -162,9 +162,8 @@ with Timer("Log to MLflow"):
 
         # ---- Save run metadata for DVC ----
         print("🧩 Saving MLflow run metadata for DVC linkage...")
-        reports_dir = "app/reports"
+        reports_dir = "reports"
         os.makedirs(reports_dir, exist_ok=True)
-
         # ============================================================
         # Capture run ID (MLflow-native)
         # ============================================================
@@ -176,6 +175,7 @@ with Timer("Log to MLflow"):
         model_registry_uri = logged.model_uri
         model_id = model_registry_uri.replace("models:/", "")
         pipeline_model_uri = f"gs://rent_price_bucket/artifacts/{experiment_id}/models/{model_id}/artifacts"
+        print("saved link:", pipeline_model_uri)
         # ============================================================
         # Save metadata to JSON — clean and portable
         # ============================================================
