@@ -1,0 +1,7 @@
+{
+  "run_id": "cc281a15dc6741c7b79fe223def017d8",
+  "pipeline_model_uri": "runs:/cc281a15dc6741c7b79fe223def017d8/pipeline_model",
+  "timestamp": "2025-11-14T06:59:53.432401Z",
+  "mlflow_experiment": "Rent_Price_Pipeline",
+  "mlflow_ui_link": "http://127.0.0.1:5000/#/experiments/8/runs/cc281a15dc6741c7b79fe223def017d8"
+}
