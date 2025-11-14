@@ -7,14 +7,13 @@ stages:
       - src/features/build_features.py
       - data/processed/train.parquet
       - params.yaml
-    outs:
-      - reports/last_run_info.json
+    # No outs here — last_run_info.json is NOT tracked by DVC
 
   evaluate:
     cmd: python src/evaluate.py
     deps:
       - src/evaluate.py
-      - reports/last_run_info.json
+      - reports/last_run_info.json   # only as dependency, not output
       - data/processed/test.parquet
     metrics:
       - reports/eval_metrics.json:
