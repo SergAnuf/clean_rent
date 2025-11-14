@@ -1,0 +1,7 @@
+{
+  "run_id": "c754a37ea94e46bdb31cf88b3bde8d62",
+  "pipeline_model_uri": "gs://rent_price_bucket/artifacts/8/models/m-4e3a611bffad4ab5b32983b51476baaa/artifacts",
+  "timestamp": "2025-11-14T10:51:20.847088Z",
+  "mlflow_experiment": "Rent_Price_Pipeline",
+  "mlflow_ui_link": "http://127.0.0.1:5000/#/experiments/8/runs/c754a37ea94e46bdb31cf88b3bde8d62"
+}

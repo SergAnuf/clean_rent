@@ -1,7 +1,7 @@
 {
-  "run_id": "b43cf458ad594252bf7123c4cdc444f8",
-  "pipeline_model_uri": "models:/m-ad1204534bf147658f6b176edc00e51c",
-  "timestamp": "2025-11-14T09:47:45.409917Z",
+  "run_id": "b20c792c955945bd817c20dcb167ea14",
+  "pipeline_model_uri": "gs://rent_price_bucket/artifacts/8/models/m-7b1df93575ea433a82a0c000c42c606e/artifacts",
+  "timestamp": "2025-11-14T11:14:18.454923Z",
   "mlflow_experiment": "Rent_Price_Pipeline",
-  "mlflow_ui_link": "http://127.0.0.1:5000/#/experiments/8/runs/b43cf458ad594252bf7123c4cdc444f8"
+  "mlflow_ui_link": "http://127.0.0.1:5000/#/experiments/8/runs/b20c792c955945bd817c20dcb167ea14"
 }
