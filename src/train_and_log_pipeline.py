@@ -137,7 +137,7 @@ with Timer("Log to MLflow"):
 
         # ---- Log wrapper pipeline ----
         logged = mlflow.pyfunc.log_model(
-            name="pipeline_model",
+            artifact_path="pipeline_model",
             python_model=wrapped,
             code_paths=[
                 "src/features/geo_features.py",
