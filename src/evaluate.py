@@ -4,7 +4,9 @@ import mlflow
 import pandas as pd
 import requests
 from sklearn.metrics import r2_score, mean_absolute_error, mean_absolute_percentage_error
+from dotenv import load_dotenv
 
+load_dotenv()
 # Add project root to sys.path for imports
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
