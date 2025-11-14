@@ -174,20 +174,25 @@ with Timer("Log to MLflow"):
         os.makedirs(reports_dir, exist_ok=True)
 
         # ============================================================
-        # Capture the actual artifact URI from MLflow (correct path)
+        # Capture run ID (MLflow-native)
         # ============================================================
-        model_final_uri = mlflow.get_artifact_uri("pipeline_model")
         run_id = run.info.run_id
 
+        # MLflow-native model URI (recommended for all environments)
+        pipeline_model_uri = f"runs:/{run_id}/pipeline_model"
+
         # ============================================================
-        # Save metadata to JSON
+        # Save metadata to JSON — clean and portable
         # ============================================================
         run_info = {
             "run_id": run_id,
-            "pipeline_model_uri": model_final_uri,
+            "pipeline_model_uri": pipeline_model_uri,
             "timestamp": datetime.utcnow().isoformat() + "Z",
             "mlflow_experiment": mlflow.get_experiment(run.info.experiment_id).name,
-            "mlflow_ui_link": f"http://{TRACKING_SERVER_HOST}:{TRACKING_SERVER_PORT}/#/experiments/{run.info.experiment_id}/runs/{run_id}"
+            "mlflow_ui_link": (
+                f"http://{TRACKING_SERVER_HOST}:{TRACKING_SERVER_PORT}/#/experiments/"
+                f"{run.info.experiment_id}/runs/{run_id}"
+            ),
         }
 
         with open(os.path.join(reports_dir, "last_run_info.json"), "w") as f:
@@ -198,6 +203,7 @@ with Timer("Log to MLflow"):
 
         print("   📄 Saved run metadata to reports/last_run_info.json")
         print("   Run ID:", run_id)
+        print("   Pipeline model URI:", pipeline_model_uri)
         print("   MLflow UI:", run_info["mlflow_ui_link"])
 
 # ============================================================
