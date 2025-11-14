@@ -3,8 +3,10 @@ from dotenv import load_dotenv
 import pandas as pd
 
 load_dotenv()
+#
+# MODEL_URI =  "models:/m-ad1204534bf147658f6b176edc00e51c"
 
-MODEL_URI =  "models:/m-201aa76a32bc4a4883fc9702dad34373"
+MODEL_URI = "gs://rent_price_bucket/artifacts/8/models/m-ad1204534bf147658f6b176edc00e51c/artifacts"
 
 print("🔗 Loading MLflow model from:")
 print(MODEL_URI)
@@ -26,4 +28,5 @@ df = pd.DataFrame([{
 
 
 print(model.predict(df))
+
 
