@@ -166,20 +166,12 @@ with Timer("Log to MLflow"):
         os.makedirs(reports_dir, exist_ok=True)
 
         # ============================================================
-        # Construct GCS artifact paths (Solution B)
-        # ============================================================
-        # ---- Save run metadata for DVC ----
-        print("🧩 Saving MLflow run metadata for DVC linkage...")
-        reports_dir = "reports"
-        os.makedirs(reports_dir, exist_ok=True)
-
-        # ============================================================
         # Capture run ID (MLflow-native)
         # ============================================================
         run_id = run.info.run_id
 
         # MLflow-native model URI (recommended for all environments)
-        pipeline_model_uri = f"runs:/{run_id}/pipeline_model"
+        pipeline_model_uri = mlflow.get_artifact_uri("pipeline_model")
 
         # ============================================================
         # Save metadata to JSON — clean and portable
